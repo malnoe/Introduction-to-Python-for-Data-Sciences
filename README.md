@@ -34,8 +34,8 @@
 
 ### Math-leaning projects
 
-#### [Project 1](projects/Group_1/Project 1.ipynb): Optimization ↪
-#### [Project 2](projects/Group_2/Project 2.ipynb): MCMC 🪙
+#### [Project 1](projects/Group_1/Project_1.ipynb): Optimization ↪
+#### [Project 2](projects/Group_2/Project_2.ipynb): MCMC 🪙
 
 ### Learning-leaning projects
 
