@@ -34,12 +34,13 @@
 
 ### Math-leaning projects
 
-#### [Project 1](projects/Group_1/Project 1.ipynb)
-#### [Project 2](projects/Group_2/Project 2.ipynb)
+#### [Project 1](projects/Group_1/Project 1.ipynb): Optimization ↪
+#### [Project 2](projects/Group_2/Project 2.ipynb): MCMC 🪙
 
 ### Learning-leaning projects
 
-#### WIP
+#### [Project 3](projects/Group_3/Project_3.ipynb) Text 📚
+#### [Project 4](projects/Group_4/Project_4.ipynb) Images 🖼
 
 ## Credits
 
