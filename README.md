@@ -39,8 +39,12 @@
 
 ### Learning-leaning projects
 
-#### [Project 3](projects/Group_3/Project_3.ipynb) Text 📚
-#### [Project 4](projects/Group_4/Project_4.ipynb) Images 🖼
+#### [Project 3](projects/Group_3/Project_3.ipynb): Text 📚
+#### [Project 4](projects/Group_4/Project_4.ipynb): Images 🖼
+
+### Data-leaning projects
+
+#### [Project 5](projects/Group_5/Project_5.ipynb): Scientific data :panda_face:
 
 ## Credits
 
