@@ -6,8 +6,8 @@ def make_random_func1(n: int):
     """
     Random quadratic function (convex)
     """
-    L = np.tril(np.random.randn(n, n))
-    A = L @ L.T
+    L = np.tril(np.random.randn(n, n)) / n
+    A = L @ L.T + np.eye(n)
     b = np.random.randn(n)
     return Function1(A, b)
 
