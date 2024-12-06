@@ -64,15 +64,49 @@ def BfgsDescent(eps, theta0,L,eta):
     print("Nombre d'étapes : "+ str(len(liste_theta)))
     return liste_theta[-1]
 
-def StochasticDescent(eps, theta0, L, eta):
+#def StochasticDescent(eps, theta0, L, eta):
     # On fait une première étape hors de la boucle
-    X = Function2.value_oracle(L,theta0)
-    randomized_grad = 
-    p = -eta*Function1.grad_oracle(L, theta0)
-    theta1 = theta0 + p
-    liste_theta = [theta0, theta1]
-    while (np.linalg.norm(liste_theta[-1] - liste_theta[-2])) > eps :
+#    randomized_grad = Function2.batched_grad_oracle(L,indexing=Union[], theta=theta0)
+#    p = -eta*randomized_grad
+#    theta1 = theta0 + p
+#    liste_theta = [theta0, theta1]
+#    while (np.linalg.norm(liste_theta[-1] - liste_theta[-2])) > eps :
+#        p = -eta * Function2.grad_oracle(L, liste_theta[-1])
+#        liste_theta.append(liste_theta[-1] + p)
+#        
+#    print("Nombre d'étapes : "+ str(len(liste_theta)))
+#    return liste_theta[-1]
+
+        
+from typing import List
+
+def StochasticDescent(eps: float, theta0: np.ndarray, L: Function2, eta: float, batch_size: int) -> np.ndarray:
+    # Initialisation
+    theta = theta0
+    liste_theta = [theta0]
+    n_points = L.X.shape[0]
+
+    while True:
+        # Sélection aléatoire d'un mini-batch d'indices
+        batch_indices = np.random.choice(n_points, size=batch_size, replace=False)
+        
+        # Calcul du gradient sur le mini-batch
+        grad = L.batched_grad_oracle(batch_indices, theta)
+        grad_mean = np.mean(grad, axis=0)  # Moyenne des gradients dans le batch
+        
+        # Mise à jour
+        theta_new = theta - eta * grad_mean
+        liste_theta.append(theta_new)
+        
+        # Vérification de la convergence
+        if np.linalg.norm(theta_new - theta) <= eps:
+            break
+        
+        theta = theta_new
     
+    print("Nombre d'étapes : ", len(liste_theta))
+    return theta
+
          
 
 
