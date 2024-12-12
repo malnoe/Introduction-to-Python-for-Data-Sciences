@@ -3,46 +3,52 @@ from functions import Function1, Function2
 from baseloss import LossFunction
 from baseoptimizer import Optimizer
 from utils import make_random_func1, make_random_func2
+from math import *
 
-n= 3
-function1 = make_random_func1(n)
+def GradientDescent(eps:float, theta0:np.array, L:Function1, eta:float):
+    # Premiere iteration
+    p = -eta*Function1.grad_oracle(L, theta0) # Calcul de la direction 
+    theta1 = theta0 + p # Calcul du nouveau theta
+    liste_theta = [theta0, theta1] # On construit le vecteur resultat contenant les thetas
 
-def GradientDescent(eps, theta0, L, eta):
-    p = -eta*Function1.grad_oracle(L, theta0)
-    theta1 = theta0 + p
-    liste_theta = [theta0, theta1]
+    # A chaque iteration on teste si la convergence a ete atteinte (par rapport au epsilon passe en argument)
     while (np.linalg.norm(liste_theta[-1] - liste_theta[-2])) > eps :
-        p = -eta * Function1.grad_oracle(L, liste_theta[-1])
-        liste_theta.append(liste_theta[-1] + p)
-        
-    print("Nombre d'étapes : "+ str(len(liste_theta)))
+        p = -eta * Function1.grad_oracle(L, liste_theta[-1]) # Calcul de la direction
+        liste_theta.append(liste_theta[-1] + p) # Calcul du nouveau theta et ajout au vecteur
+
+    # Affichage du nombre d'etapes necessaires a la convergence
+    print("Nombre d'étapes : "+ str(len(liste_theta))) 
     return liste_theta[-1]
 
 
 
-def NewtonDescentNaive(eps, theta0, L):
-    p = -np.dot(np.linalg.inv(Function1.hessian_oracle(L,theta0)), Function1.grad_oracle(L,theta0))
-    theta1 = theta0 + p
-    liste_theta = [theta0, theta1]
-    while (np.linalg.norm(liste_theta[-1] - liste_theta[-2])) > eps :
-        p = -np.dot(np.linalg.inv(Function1.hessian_oracle(L,liste_theta[-1])), Function1.grad_oracle(L,liste_theta[-1]))
-        liste_theta.append(liste_theta[-1] + p)
+def NewtonDescentNaive(eps:float, theta0:np.array, L:Function1, eta:float):
+    # Premiere iteration
+     # Calcul de la direction
+    p = -eta*np.dot(np.linalg.inv(Function1.hessian_oracle(L,theta0)), Function1.grad_oracle(L,theta0))
+    theta1 = theta0 + p # Calcul du nouveau theta
+    liste_theta = [theta0, theta1] # Ajout du theta au vecteur resultat
 
-    print("Nombre d'étapes : "+ str(len(liste_theta)))
+    # A chaque iteration on teste si la convergence a ete atteinte (par rapport au epsilon passe en argument)
+    while (np.linalg.norm(liste_theta[-1] - liste_theta[-2])) > eps :
+        p = -eta*np.dot(np.linalg.inv(Function1.hessian_oracle(L,liste_theta[-1])), Function1.grad_oracle(L,liste_theta[-1])) # Calcul direction
+        liste_theta.append(liste_theta[-1] + p) # Calcul du nouveau theta et ajout au vecteur resultat
+
+    print("Nombre d'étapes : "+ str(len(liste_theta))) #Affichage du nombre d'etapes necessaire a la convergence
     return liste_theta[-1]
 
 
 def NewtonDescentClever(theta0, L):
-    return theta0 - np.dot(np.linalg.inv(L.A),L.b)
+    return theta0 - np.dot(np.linalg.inv(L.A),L.b) #On fait le calcul direct
 
 
 
-def BfgsDescent(eps, theta0,L,eta):
+def BfgsDescent(eps:float, theta0:np.array, L:Function1, eta:float):
     # On definit les variables : n, B, grad et liste theta
     n = len(theta0)
     B = np.eye(n)
 
-    # Première étape
+    # Premiere etape
     grad =  Function1.grad_oracle(L,theta0)
     p = -eta*grad
     theta1 = theta0 + p
@@ -57,57 +63,74 @@ def BfgsDescent(eps, theta0,L,eta):
         Bs = np.dot(B,s)
         B = B + np.dot(y,y.T)/np.dot(y,s) - np.dot(Bs,Bs.T)/np.dot(s,Bs)
         
-        # On met à jour les anciennes valeurs
+        # On met a jour les anciennes valeurs
         liste_theta.append(theta_new)
         grad = grad_new
         
     print("Nombre d'étapes : "+ str(len(liste_theta)))
     return liste_theta[-1]
 
-#def StochasticDescent(eps, theta0, L, eta):
-    # On fait une première étape hors de la boucle
-#    randomized_grad = Function2.batched_grad_oracle(L,indexing=Union[], theta=theta0)
-#    p = -eta*randomized_grad
-#    theta1 = theta0 + p
-#    liste_theta = [theta0, theta1]
-#    while (np.linalg.norm(liste_theta[-1] - liste_theta[-2])) > eps :
-#        p = -eta * Function2.grad_oracle(L, liste_theta[-1])
-#        liste_theta.append(liste_theta[-1] + p)
-#        
-#    print("Nombre d'étapes : "+ str(len(liste_theta)))
-#    return liste_theta[-1]
 
         
-from typing import List
-
-def StochasticDescent(eps: float, theta0: np.ndarray, L: Function2, eta: float, batch_size: int) -> np.ndarray:
+def StochasticDescent(eps: float, theta0: np.ndarray, L: Function2, eta: float, batch_size: int) -> (np.ndarray,float):
     # Initialisation
     theta = theta0
     liste_theta = [theta0]
     n_points = L.X.shape[0]
 
     while True:
-        # Sélection aléatoire d'un mini-batch d'indices
+        # Selection aleatoire d un mini-batch d indices
         batch_indices = np.random.choice(n_points, size=batch_size, replace=False)
         
         # Calcul du gradient sur le mini-batch
         grad = L.batched_grad_oracle(batch_indices, theta)
         grad_mean = np.mean(grad, axis=0)  # Moyenne des gradients dans le batch
         
-        # Mise à jour
+        # Calcul de theta_new
         theta_new = theta - eta * grad_mean
         liste_theta.append(theta_new)
         
-        # Vérification de la convergence
+        # Verification de la convergence
         if np.linalg.norm(theta_new - theta) <= eps:
             break
-        
+
+        # Mise à jour de theta
         theta = theta_new
     
-    print("Nombre d'étapes : ", len(liste_theta))
-    return theta
+    return theta,len(liste_theta)
 
-         
 
+def Adam(L,theta_0, eps, eta, beta_1, beta_2,epsilon=1e-8) :
+    m = np.zeros_like(theta_0)
+    v = np.zeros_like(theta_0)
+    theta = theta_0
+    n_points = L.X.shape[0]
+    batch_size = len(theta_0)
+    
+    batch_indices = np.random.choice(n_points, size=batch_size, replace=False)
+    grad = L.batched_grad_oracle(batch_indices, theta)
+    grad_new=np.mean(grad, axis=0)
+    
+    m_new = beta_1 * m + (1 - beta_1) * grad_new
+    v_new = beta_2 * v +(1 - beta_2) * grad_new**2
+    m_hat = m_new / (1-beta_1)
+    v_hat = v_new / (1-beta_2)
+    theta_new = theta - eta * m_hat / (np.sqrt( v_hat ) + epsilon )
+
+    while np.linalg.norm(theta_new - theta)>eps :
+        theta=theta_new
+        batch_indices = np.random.choice(n_points, size=batch_size, replace=False)
+        grad = L.batched_grad_oracle(batch_indices, theta)
+        grad_new=np.mean(grad, axis=0)
+        
+        m_new = beta_1 * m + (1 - beta_1) * grad_new
+        v_new = beta_2 * v +(1 - beta_2) * grad_new**2
+        m_hat = m_new / (1-beta_1)
+        v_hat = v_new / (1-beta_2)
+        v_hat = np.maximum(v_hat, epsilon) 
+        theta_new = theta - eta * m_hat / ( np.sqrt( v_hat )  + epsilon )
+        m = m_new
+        v = v_new
+    return(theta_new)
 
 
