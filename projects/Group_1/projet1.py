@@ -3,134 +3,220 @@ from functions import Function1, Function2
 from baseloss import LossFunction
 from baseoptimizer import Optimizer
 from utils import make_random_func1, make_random_func2
-from math import *
 
-def GradientDescent(eps:float, theta0:np.array, L:Function1, eta:float):
-    # Premiere iteration
-    p = -eta*Function1.grad_oracle(L, theta0) # Calcul de la direction 
-    theta1 = theta0 + p # Calcul du nouveau theta
-    liste_theta = [theta0, theta1] # On construit le vecteur resultat contenant les thetas
+def gradient_descent(
+    eps: float, theta0: np.array, L: Function1, eta: float
+) -> (np.ndarray, float):
+    """Perform gradient descent optimization."""
+    # Initialisation des variables.
+    theta = theta0
+    liste_theta = [theta0]
 
-    # A chaque iteration on teste si la convergence a ete atteinte (par rapport au epsilon passe en argument)
-    while (np.linalg.norm(liste_theta[-1] - liste_theta[-2])) > eps :
-        p = -eta * Function1.grad_oracle(L, liste_theta[-1]) # Calcul de la direction
-        liste_theta.append(liste_theta[-1] + p) # Calcul du nouveau theta et ajout au vecteur
+    while True:
+        # Calcul du gradient et du nouveau theta associe.
+        grad = Function1.grad_oracle(L, theta)
+        theta_new = theta - eta * grad
+        liste_theta.append(theta_new)
 
-    # Affichage du nombre d'etapes necessaires a la convergence
-    print("Nombre d'étapes : "+ str(len(liste_theta))) 
-    return liste_theta[-1]
+        # Verification de la condition de convergence.
+        if np.linalg.norm(theta_new - theta) <= eps:
+            break
 
+        # Ecrasement de l'ancienne valeur de theta.
+        theta = theta_new
 
+    print(f"Nombre d'étapes : {len(liste_theta)}")
+    return theta, len(liste_theta)
 
-def NewtonDescentNaive(eps:float, theta0:np.array, L:Function1, eta:float):
-    # Premiere iteration
-     # Calcul de la direction
-    p = -eta*np.dot(np.linalg.inv(Function1.hessian_oracle(L,theta0)), Function1.grad_oracle(L,theta0))
-    theta1 = theta0 + p # Calcul du nouveau theta
-    liste_theta = [theta0, theta1] # Ajout du theta au vecteur resultat
+def gradient_descent_1(eps, theta0, L, eta):
+    """Perform gradient descent optimization, returns the number of steps."""
+    # Initialisation des variables.
+    theta = theta0
+    liste_theta = [theta0]
 
-    # A chaque iteration on teste si la convergence a ete atteinte (par rapport au epsilon passe en argument)
-    while (np.linalg.norm(liste_theta[-1] - liste_theta[-2])) > eps :
-        p = -eta*np.dot(np.linalg.inv(Function1.hessian_oracle(L,liste_theta[-1])), Function1.grad_oracle(L,liste_theta[-1])) # Calcul direction
-        liste_theta.append(liste_theta[-1] + p) # Calcul du nouveau theta et ajout au vecteur resultat
+    while True:
+        # Calcul du gradient et du nouveau theta associe.
+        grad = Function1.grad_oracle(L, theta)
+        theta_new = theta - eta * grad
+        liste_theta.append(theta_new)
 
-    print("Nombre d'étapes : "+ str(len(liste_theta))) #Affichage du nombre d'etapes necessaire a la convergence
-    return liste_theta[-1]
+        # Verification de la condition de convergence.
+        if np.linalg.norm(theta_new - theta) <= eps:
+            break
 
+        # Ecrasement de l'ancienne valeur de theta.
+        theta = theta_new
 
-def NewtonDescentClever(theta0, L):
-    return theta0 - np.dot(np.linalg.inv(L.A),L.b) #On fait le calcul direct
+    return len(liste_theta)
 
+def newton_descent_naive(
+    eps: float, theta0: np.array, L: Function1, eta: float
+) -> (np.ndarray, float):
+    """Perform naive Newton descent optimization."""
 
+    # Initialisation des variables.
+    theta = theta0
+    liste_theta = [theta0]
 
-def BfgsDescent(eps:float, theta0:np.array, L:Function1, eta:float):
-    # On definit les variables : n, B, grad et liste theta
+    while True:
+        # Calcul de la hessienne et du gradient.
+        hessian_inv = np.linalg.inv(Function1.hessian_oracle(L, theta))
+        grad = Function1.grad_oracle(L, theta)
+        theta_new = theta - eta * np.dot(hessian_inv, grad)
+        liste_theta.append(theta_new)
+
+        # Verification de la condition de convergence.
+        if np.linalg.norm(theta_new - theta) <= eps:
+            break
+
+        # Ecrasement de l'ancienne valeur de theta.
+        theta = theta_new
+
+    print(f"Nombre d'étapes : {len(liste_theta)}")
+    return theta, len(liste_theta)
+
+def newton_descent_naive_1(
+    eps: float, theta0: np.array, L: Function1, eta: float
+) -> (np.ndarray, float):
+    """Perform naive Newton descent optimization."""
+
+    # Initialisation des variables.
+    theta = theta0
+    liste_theta = [theta0]
+
+    while True:
+        # Calcul de la hessienne et du gradient.
+        hessian_inv = np.linalg.inv(Function1.hessian_oracle(L, theta))
+        grad = Function1.grad_oracle(L, theta)
+        theta_new = theta - eta * np.dot(hessian_inv, grad)
+        liste_theta.append(theta_new)
+
+        # Verification de la condition de convergence.
+        if np.linalg.norm(theta_new - theta) <= eps:
+            break
+
+        # Ecrasement de l'ancienne valeur de theta.
+        theta = theta_new
+
+    return len(liste_theta)
+
+def newton_descent_clever(theta0: np.array, L: Function1) -> np.ndarray:
+    """Perform direct computation for Newton descent."""
+    theta = theta0 - np.dot(np.linalg.inv(L.A), L.b)
+    return theta
+
+def bfgs_descent(eps: float, theta0: np.array, L: Function1, eta: float):
+    """Perform BFGS optimization."""
+    # Initialisation des variables
     n = len(theta0)
     B = np.eye(n)
-
-    # Premiere etape
-    grad =  Function1.grad_oracle(L,theta0)
-    p = -eta*grad
+    grad = Function1.grad_oracle(L, theta0)
+    p = -eta * grad
     theta1 = theta0 + p
     liste_theta = [theta0, theta1]
 
-    while (np.linalg.norm(liste_theta[-1] - liste_theta[-2])) > eps :
-        # On calcule les nouvelles valeurs
-        grad_new = Function1.grad_oracle(L,liste_theta[-1])
-        theta_new = liste_theta[-1] - eta*np.dot(B,grad)
+    while np.linalg.norm(liste_theta[-1] - liste_theta[-2]) > eps:
+        grad_new = Function1.grad_oracle(L, liste_theta[-1])
+        theta_new = liste_theta[-1] - eta * np.dot(B, grad)
         s = theta_new - liste_theta[-1]
         y = grad_new - grad
-        Bs = np.dot(B,s)
-        B = B + np.dot(y,y.T)/np.dot(y,s) - np.dot(Bs,Bs.T)/np.dot(s,Bs)
-        
-        # On met a jour les anciennes valeurs
+        Bs = np.dot(B, s)
+        B += (np.outer(y, y) / np.dot(y, s)) - (np.outer(Bs, Bs) / np.dot(s, Bs))
+
         liste_theta.append(theta_new)
         grad = grad_new
-        
-    print("Nombre d'étapes : "+ str(len(liste_theta)))
+
+    print(f"Nombre d'étapes : {len(liste_theta)}")
     return liste_theta[-1]
 
+def bfgs_descent_1(eps: float, theta0: np.array, L: Function1, eta: float):
+    """Perform BFGS optimization."""
+    # Initialisation des variables
+    n = len(theta0)
+    B = np.eye(n)
+    grad = Function1.grad_oracle(L, theta0)
+    p = -eta * grad
+    theta1 = theta0 + p
+    liste_theta = [theta0, theta1]
 
-        
-def StochasticDescent(eps: float, theta0: np.ndarray, L: Function2, eta: float, batch_size: int) -> (np.ndarray,float):
-    # Initialisation
+    while np.linalg.norm(liste_theta[-1] - liste_theta[-2]) > eps:
+        grad_new = Function1.grad_oracle(L, liste_theta[-1])
+        theta_new = liste_theta[-1] - eta * np.dot(B, grad)
+        s = theta_new - liste_theta[-1]
+        y = grad_new - grad
+        Bs = np.dot(B, s)
+        B += (np.outer(y, y) / np.dot(y, s)) - (np.outer(Bs, Bs) / np.dot(s, Bs))
+
+        liste_theta.append(theta_new)
+        grad = grad_new
+
+    return len(liste_theta)
+
+
+def stochastic_descent(
+    eps: float, theta0: np.ndarray, L: Function2, eta: float, batch_size: int
+) -> (np.ndarray, float):
+    """Perform stochastic gradient descent."""
+    # Initialisation des variables.
     theta = theta0
     liste_theta = [theta0]
     n_points = L.X.shape[0]
 
     while True:
-        # Selection aleatoire d un mini-batch d indices
+        # Calcul des gradients aleatoire et de leur moyenne.
         batch_indices = np.random.choice(n_points, size=batch_size, replace=False)
-        
-        # Calcul du gradient sur le mini-batch
         grad = L.batched_grad_oracle(batch_indices, theta)
-        grad_mean = np.mean(grad, axis=0)  # Moyenne des gradients dans le batch
-        
-        # Calcul de theta_new
+        grad_mean = np.mean(grad, axis=0)
+
+        # Calcul du nouveau theta associe.
         theta_new = theta - eta * grad_mean
         liste_theta.append(theta_new)
-        
-        # Verification de la convergence
+
+        # Verification de la condition de convergence
         if np.linalg.norm(theta_new - theta) <= eps:
             break
 
-        # Mise à jour de theta
+        # Ecrasement de l'ancienne valeur de theta.
         theta = theta_new
-    
-    return theta,len(liste_theta)
 
+    return theta, len(liste_theta)
 
-def Adam(L,theta_0, eps, eta, beta_1, beta_2,epsilon=1e-8) :
+def adam(
+    L, theta_0, eps, eta, beta_1, beta_2, epsilon=1e-8
+) -> np.ndarray:
+    """Perform Adam optimization."""
+    # Initialisation des variabels
     m = np.zeros_like(theta_0)
     v = np.zeros_like(theta_0)
     theta = theta_0
+    liste_theta = [theta_0]
     n_points = L.X.shape[0]
     batch_size = len(theta_0)
-    
-    batch_indices = np.random.choice(n_points, size=batch_size, replace=False)
-    grad = L.batched_grad_oracle(batch_indices, theta)
-    grad_new=np.mean(grad, axis=0)
-    
-    m_new = beta_1 * m + (1 - beta_1) * grad_new
-    v_new = beta_2 * v +(1 - beta_2) * grad_new**2
-    m_hat = m_new / (1-beta_1)
-    v_hat = v_new / (1-beta_2)
-    theta_new = theta - eta * m_hat / (np.sqrt( v_hat ) + epsilon )
 
-    while np.linalg.norm(theta_new - theta)>eps :
-        theta=theta_new
+    while True:
+        # Calcul des des gradients aleatoires et de leur moyenne
         batch_indices = np.random.choice(n_points, size=batch_size, replace=False)
         grad = L.batched_grad_oracle(batch_indices, theta)
-        grad_new=np.mean(grad, axis=0)
-        
-        m_new = beta_1 * m + (1 - beta_1) * grad_new
-        v_new = beta_2 * v +(1 - beta_2) * grad_new**2
-        m_hat = m_new / (1-beta_1)
-        v_hat = v_new / (1-beta_2)
-        v_hat = np.maximum(v_hat, epsilon) 
-        theta_new = theta - eta * m_hat / ( np.sqrt( v_hat )  + epsilon )
-        m = m_new
-        v = v_new
-    return(theta_new)
+        grad_mean = np.mean(grad, axis=0)
 
+        # Calcul des variables (moments) permettant de controler la descente.
+        m = beta_1 * m + (1 - beta_1) * grad_mean
+        v = beta_2 * v + (1 - beta_2) * grad_mean**2
+        m_hat = m / (1 - beta_1)
+        v_hat = v / (1 - beta_2)
+        v_hat = np.maximum(v_hat, epsilon)
+
+        # Calcul du nouveau theta associe.
+        theta_new = theta - eta * m_hat / (np.sqrt(v_hat) + epsilon)
+        liste_theta.append(theta_new)
+        
+        # Verification de la condition de convergence.
+        if np.linalg.norm(theta_new - theta) <= eps:
+            break
+
+        # Ecrasement de l'ancienne valeur de theta.
+        theta = theta_new
+        
+
+    return theta, len(liste_theta)
 
